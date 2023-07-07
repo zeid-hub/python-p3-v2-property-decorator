@@ -1,103 +1,334 @@
-# X Property Function Decorator
+# Property Function Decorator
 
 ## Learning Goals
 
-- Learning goal 1.
-- Learning goal 2.
+- Use property() as a Decorator
 
-***
+---
 
 ## Key Vocab
 
-- **Vocab Term**: definition. Continuation of definition.
+- **Attribute**: variables that belong to an object.
+- **Property**: attributes that are controlled by methods.
+- **Decorator**: function that takes another function as an argument and returns
+  a new function with added functionality.
 
-***
+---
 
 ## Introduction
 
-Lorem ipsum dolor sit amet. Ut velit fugit et porro voluptas quia sequi quo
-libero autem qui similique placeat eum velit autem aut repellendus quia. Et
-Quis magni ut fugit obcaecati in expedita fugiat est iste rerum qui ipsam
-ducimus et quaerat maxime sit eaque minus. Est molestias voluptatem et nostrum
-recusandae qui incidunt Quis 33 ipsum perferendis sed similique architecto.
+Properties in Python are attributes that are controlled by methods. We've
+already seen how to use the `property()` function to define getter and setter
+methods that control how object attributes are accessed and modified.
 
-Sed ipsam quidem eum minima maxime et commodi dolores quo ipsa maxime aut vero
-consectetur id velit dignissimos. Et fuga porro eum galisum suscipit qui esse
-blanditiis sed explicabo officia aut mollitia error est illo earum et sint
-laborum! Sit aspernatur accusantium aut doloribus saepe est magni quod aut
-molestiae voluptatem.
+A **decorator** is a function that takes another function as an argument and
+returns a new function, often attaching pre- or post-processing functionality.
+The decorator syntax was not available when the property() function was
+originally introduced. However, the decorator syntax was added in Python 2.4,
+and using property() as a decorator has become a popular practice.
 
-Vel inventore minus aut ullam maiores sit internos cupiditate eos odit totam
-eos molestiae galisum. Et ipsum provident ut nihil dicta et dicta doloremque
-eum magnam ullam ut quibusdam quaerat.
+---
 
-***
+## Reviewing `property()`
 
-## Lesson Section
+Before we see how to use a decorator to define a property, let's review the
+original `property()` function.
 
-Lorem ipsum dolor sit amet. Ut velit fugit et porro voluptas quia sequi quo
-libero autem qui similique placeat eum velit autem aut repellendus quia. Et
-Quis magni ut fugit obcaecati in expedita fugiat est iste rerum qui ipsam
-ducimus et quaerat maxime sit eaque minus. Est molestias voluptatem et nostrum
-recusandae qui incidunt Quis 33 ipsum perferendis sed similique architecto.
+We'll start with a `Dog` class with attributes for `name` and `breed`.
+
+- `name` must be a string of 1 to 25 characters in length
+- `breed` must be a string in the list of approved breeds
+
+We define getter and setter methods for the attributes, then use the `property`
+function to enforce that the methods are used to access and mutate the
+attributes:
 
 ```py
-# python code block
-print("statement")
-# => statement
+APPROVED_BREEDS = [
+    "Mastiff",
+    "Chihuahua",
+    "Corgi",
+    "Shar Pei",
+    "Beagle",
+    "French Bulldog",
+    "Pug",
+    "Pointer"
+]
+
+
+class Dog:
+    def __init__(self, name='Fido', breed='Mastiff'):
+        self.name = name
+        self.breed = breed
+
+    def get_name(self):
+        return self._name
+
+    def set_name(self, name):
+        if isinstance(name, str) and 1 <= len(name) <= 25:
+            self._name = name.title()
+        else:
+            raise ValueError(
+                "Name must be string between 1 and 25 characters.")
+
+    name = property(get_name, set_name)
+
+    def get_breed(self):
+        return self._breed
+
+    def set_breed(self, breed):
+        if breed in APPROVED_BREEDS:
+            self._breed = breed
+        else:
+            raise ValueError("Breed must be in list of approved breeds.")
+
+    breed = property(get_breed, set_breed)
+
 ```
 
-```js
-// javascript code block
-console.log("use these for comparisons between languages.")
-// => use these for comparisons between languages.
+If we create a Dog with a valid name and breed, no exception is thrown :
+
+```py
+Dog("Fido", "Corgi")
 ```
 
-```console
-echo "bash/zshell statement"
-# => bash/zshell statement
+However, passing a name that is not a string results in a `ValueError`
+exception:
+
+```py
+Dog(7, "Pug")
+
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/python-p3-v2-property-decorator/lib/dog.py", line 15, in __init__
+    self.name = name
+  File "/python-p3-v2-property-decorator/lib/dog.py", line 25, in set_name
+    raise ValueError(
+ValueError: Name must be string between 1 and 25 characters.
+
+```
+
+A name with an invalid length also throws the exception:
+
+```py
+Dog("Fido the Pug who likes to roll in the mud", "Pug")
+
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/python-p3-v2-property-decorator/lib/dog.py", line 15, in __init__
+    self.name = name
+  File "/python-p3-v2-property-decorator/lib/dog.py", line 25, in set_name
+    raise ValueError(
+ValueError: Name must be string between 1 and 25 characters.
+
+```
+
+An exception is thrown if the breed is not in the approved list:
+
+```py
+>>> Dog("Fifi", "Poodle")
+
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/python-p3-v2-property-decorator/lib/dog.py", line 16, in __init__
+    self.breed = breed
+  File "/python-p3-v2-property-decorator/lib/dog.py", line 37, in set_breed
+    raise ValueError("Breed must be in list of approved breeds.")
+ValueError: Breed must be in list of approved breeds.
+
 ```
 
 <details>
   <summary>
-    <em>Check for understanding text goes here! <code>Code statements go here.</code></em>
+    <em>Will this code throw an exception? <br><code>dog = Dog("Snoopy", "Beagle") <br>
+    dog.breed = "Beagle, Blue Tick"</code></em>
   </summary>
 
   <h3>Answer.</h3>
-  <p>Elaboration on answer.</p>
+  <p>Yes, the assignment <br> <code>dog.breed = "Beagle, Blue Tick"</code> <br>throws a <code>ValueError</code> exception since the breed is not in the approved list.</p>
 </details>
 <br/>
 
-***
+---
 
-## Instructions
+This lesson is a code-along, so fork and clone the repo.
 
-This is a **test-driven lab**. Run `pipenv install` to create your virtual
-environment and `pipenv shell` to enter the virtual environment. Then run
-`pytest -x` to run your tests. Use these instructions and `pytest`'s error
-messages to complete your work in the `lib/` folder.
+**NOTE: Remember to run `pipenv install` to install the dependencies and
+`pipenv shell` to enter your virtual environment before running your code.**
 
-Instructions begin here:
+```bash
+pipenv install
+pipenv shell
+```
 
-- Make sure to specify any class, method, variable, module, package names
-  that `pytest` will check for.
-- Any other instructions go here.
+This code-along lesson contains a file `dog_property_test.py` for testing the
+`Dog` class and its properties.
 
-Once all of your tests are passing, commit and push your work using `git` to
-submit.
+```py
+from dog import Dog
+import pytest
 
-***
+
+class TestDogProperties:
+    '''Class Dog in dog.py'''
+
+    def test_name_breed_valid(self):
+        '''validates name and breed properties are initialized with valid values'''
+        try:
+            # No exception should be thrown since name and breed are valid
+            dog = Dog("Fido", "Corgi")
+        except Exception as exc:
+            # The assertion fails if an exception is thrown
+            assert False, f'Dog("Fido", "Corgi") raised an exception {exc}'
+
+    def test_name_is_string_valid_length(self):
+        '''validates name property is assigned a string between 1 and 25 characters'''
+        dog = Dog("Fido", "Corgi")
+        with pytest.raises(ValueError):
+            dog.name = 7  # not a string
+        with pytest.raises(ValueError):
+            dog.name = ''  # too short
+        with pytest.raises(ValueError):
+            dog.name = 'Fido the adorable Corgi who likes to steal socks'  # too long
+
+    def test_breed_is_approved_breed(self):
+        '''validates breed property is in list of approved choices'''
+        dog = Dog("Snoopy", "Beagle")
+        with pytest.raises(ValueError):
+            dog.breed = "Poodle"  # not an approved breed
+```
+
+Let's run the tests to confirm the current implementation of the `name` and
+`breed` properties. The tests should pass.
+
+```bash
+pytest -x
+```
+
+---
+
+## Using property() as a decorator
+
+We decorate a function by placing the name of the decorator with a leading @
+symbol before the definition of the function you want to decorate:
+
+```py
+@decorator
+def func(a):
+    return a
+```
+
+This syntax is equivalent to the following:
+
+```py
+def func(a):
+    return a
+
+func = decorator(func)
+```
+
+We use the `@property` decorator to define a property's getter function. The
+method should use the public name for the underlying managed attribute, for
+example `name`.
+
+```py
+@property
+def name(self):
+    """The name property"""
+    return self._name
+```
+
+We define the setter method as shown, using the decorator `@name.setter` rather
+than `@property`:
+
+```py
+@name.setter
+def name(self, name):
+    """Name must be a string between 1 and 25 characters in length"""
+    if isinstance(name, str) and 1 <= len(name) <= 25:
+            self._name = name
+        else:
+            raise ValueError(
+                "Name must be string between 1 and 25 characters."
+            )
+```
+
+We'll define the `breed` property in a similar manner. The final version of the
+`Dog` class is as shown:
+
+```py
+APPROVED_BREEDS = [
+    "Mastiff",
+    "Chihuahua",
+    "Corgi",
+    "Shar Pei",
+    "Beagle",
+    "French Bulldog",
+    "Pug",
+    "Pointer"
+]
+
+
+class Dog:
+    def __init__(self, name='Fido', breed='Mastiff'):
+        self.name = name
+        self.breed = breed
+
+    @property
+    def name(self):
+        """The name property"""
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        """Name must be a string between 1 and 25 characters in length"""
+        if isinstance(name, str) and 1 <= len(name) <= 25:
+            self._name = name
+        else:
+            raise ValueError(
+                "Name must be string between 1 and 25 characters."
+            )
+
+    @property
+    def breed(self):
+        """The breed property"""
+        return self._breed
+
+    @breed.setter
+    def breed(self, breed):
+        """Breed must be in the list of approved breeds"""
+        if breed in APPROVED_BREEDS:
+            self._breed = breed
+        else:
+            raise ValueError("Breed must be in list of approved breeds.")
+```
+
+Notice this implementation is more Pythonic. The method names match the
+attributes `name` and `breed`, and the decorators clearly indicate the purpose
+of each method.
+
+Run the tests to confirm the updated class implementation works.
+
+```bash
+pytest -x
+```
+
+If we need methods for deleting the properties, we would decorate the methods
+with `@name.deleter` and `@breed.deleter`.
 
 ## Conclusion
 
-Conclusion summary paragraph. Include common misconceptions and what students
-will be able to do moving forward.
+Let's summarize the important points when creating properties with the decorator
+approach:
 
-***
+- The `@property` decorator must decorate the getter method.
+- The docstring must go in the getter method.
+- The setter and deleter methods must be decorated with the name of the getter
+  method plus `.setter` and `.deleter`, respectively.
+
+---
 
 ## Resources
 
-- [Resource 1](https://www.python.org/doc/essays/blurb/)
-- [Reused Resource][reused resource]
-
-[reused resource]: https://docs.python.org/3/
+- [Python Property Decorator](https://www.programiz.com/python-programming/property)
+- [Introduction to the Python Property Decorator](https://www.pythontutorial.net/python-oop/python-property-decorator/)
