@@ -1,4 +1,4 @@
-# Property Function Decorator
+# Property Function Decorator : Code-Along
 
 ## Learning Goals
 
@@ -27,7 +27,17 @@ The decorator syntax was not available when the property() function was
 originally introduced. However, the decorator syntax was added in Python 2.4,
 and using property() as a decorator has become a popular practice.
 
----
+## Code-Along
+
+This lesson is a code-along, so fork and clone the repo.
+
+**NOTE: Remember to run `pipenv install` to install the dependencies and
+`pipenv shell` to enter your virtual environment before running your code.**
+
+```bash
+pipenv install
+pipenv shell
+```
 
 ## Reviewing `property()`
 
@@ -86,57 +96,40 @@ class Dog:
 
 ```
 
-If we create a Dog with a valid name and breed, no exception is thrown :
+Let's use the debugger to create a few instances of `Dog`.
+
+Type `python lib/debug.py` to start an `ipdb` session.
+
+If we create a Dog with a valid name and breed, no exception is thrown:
 
 ```py
-Dog("Fido", "Corgi")
+ipdb> Dog("Fido", "Corgi")
+<dog.Dog object at 0x1051dc700>
 ```
 
 However, passing a name that is not a string results in a `ValueError`
 exception:
 
 ```py
-Dog(7, "Pug")
-
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "/python-p3-v2-property-decorator/lib/dog.py", line 15, in __init__
-    self.name = name
-  File "/python-p3-v2-property-decorator/lib/dog.py", line 25, in set_name
-    raise ValueError(
-ValueError: Name must be string between 1 and 25 characters.
-
+ipdb> Dog(7, "Pug")
+*** ValueError: Name must be string between 1 and 25 characters.
 ```
 
 A name with an invalid length also throws the exception:
 
 ```py
-Dog("Fido the Pug who likes to roll in the mud", "Pug")
-
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "/python-p3-v2-property-decorator/lib/dog.py", line 15, in __init__
-    self.name = name
-  File "/python-p3-v2-property-decorator/lib/dog.py", line 25, in set_name
-    raise ValueError(
-ValueError: Name must be string between 1 and 25 characters.
-
+ipdb> Dog("Fido the Pug who likes to roll in the mud", "Pug")
+*** ValueError: Name must be string between 1 and 25 characters.
 ```
 
 An exception is thrown if the breed is not in the approved list:
 
 ```py
->>> Dog("Fifi", "Poodle")
-
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "/python-p3-v2-property-decorator/lib/dog.py", line 16, in __init__
-    self.breed = breed
-  File "/python-p3-v2-property-decorator/lib/dog.py", line 37, in set_breed
-    raise ValueError("Breed must be in list of approved breeds.")
-ValueError: Breed must be in list of approved breeds.
-
+ipdb> Dog("Fifi", "Poodle")
+*** ValueError: Breed must be in list of approved breeds.
 ```
+
+Type `exit()` to exit out of the `ipdb` session.
 
 <details>
   <summary>
@@ -151,18 +144,8 @@ ValueError: Breed must be in list of approved breeds.
 
 ---
 
-This lesson is a code-along, so fork and clone the repo.
-
-**NOTE: Remember to run `pipenv install` to install the dependencies and
-`pipenv shell` to enter your virtual environment before running your code.**
-
-```bash
-pipenv install
-pipenv shell
-```
-
-This code-along lesson contains a file `dog_property_test.py` for testing the
-`Dog` class and its properties.
+The lesson repo contains a file `dog_property_test.py` for testing the `Dog`
+class and its properties.
 
 ```py
 from dog import Dog
@@ -207,7 +190,7 @@ pytest -x
 
 ---
 
-## Using property() as a decorator
+## Function Decorators
 
 We decorate a function by placing the name of the decorator with a leading @
 symbol before the definition of the function you want to decorate:
@@ -227,9 +210,21 @@ def func(a):
 func = decorator(func)
 ```
 
-We use the `@property` decorator to define a property's getter function. The
+## Using property() as a Decorator
+
+We use the `@property` decorator to define a property's getter method. The
 method should use the public name for the underlying managed attribute, for
 example `name`.
+
+Delete the `get_name` method: <s>
+
+<pre>
+def get_name(self):
+        return self._name
+</pre>
+</s>
+
+Add the `name` getter method decorated with `@property` as shown:
 
 ```py
 @property
@@ -238,20 +233,38 @@ def name(self):
     return self._name
 ```
 
-We define the setter method as shown, using the decorator `@name.setter` rather
-than `@property`:
+Delete the `set_name` method:
+
+<s>
+<pre>
+def set_name(self, name):
+    if isinstance(name, str) and 1 <= len(name) <= 25:
+        self._name = name.title()
+    else:
+        raise ValueError(
+            "Name must be string between 1 and 25 characters.")
+</pre>
+</s>
+
+Add the `name` setter method decorated with `@name.setter` as shown:
 
 ```py
 @name.setter
 def name(self, name):
     """Name must be a string between 1 and 25 characters in length"""
     if isinstance(name, str) and 1 <= len(name) <= 25:
-            self._name = name
-        else:
-            raise ValueError(
-                "Name must be string between 1 and 25 characters."
-            )
+        self._name = name
+    else:
+        raise ValueError("Name must be string between 1 and 25 characters." )
 ```
+
+Finally, you can delete the call to the `property` function as the decorators
+have defined the getter and setter methods: <s>
+
+<pre>
+name = property(get_name, set_name)
+</pre>
+</s>
 
 We'll define the `breed` property in a similar manner. The final version of the
 `Dog` class is as shown:
@@ -303,9 +316,12 @@ class Dog:
             raise ValueError("Breed must be in list of approved breeds.")
 ```
 
-Notice this implementation is more Pythonic. The method names match the
-attributes `name` and `breed`, and the decorators clearly indicate the purpose
-of each method.
+Notice that now the method names actually match the attributes `name` and
+`breed`, and the decorators clearly indicate the purpose of each method. This is
+considered to be more Pythonic - more intuitive to Python developers in general.
+
+If we need methods for deleting the properties, we would decorate the methods
+with `@name.deleter` and `@breed.deleter`.
 
 Run the tests to confirm the updated class implementation works.
 
@@ -313,18 +329,19 @@ Run the tests to confirm the updated class implementation works.
 pytest -x
 ```
 
-If we need methods for deleting the properties, we would decorate the methods
-with `@name.deleter` and `@breed.deleter`.
+You can also use the `ipdb` debugger to instantiate `Dog` objects and attempt to
+set the `name` and `breed` attributes to valid and invalid values.
 
 ## Conclusion
 
 Let's summarize the important points when creating properties with the decorator
 approach:
 
-- The `@property` decorator must decorate the getter method.
+- The `@property` decorator must decorate the getter method, which should have
+  the same name as the attribute.
 - The docstring must go in the getter method.
-- The setter and deleter methods must be decorated with the name of the getter
-  method plus `.setter` and `.deleter`, respectively.
+- The setter and deleter methods must be decorated with the same name as the
+  getter method plus `.setter` and `.deleter`, respectively.
 
 ---
 
